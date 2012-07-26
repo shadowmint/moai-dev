@@ -45,7 +45,6 @@ else()
   # Copy to build directory
   set(PROJECT_SRC_PATH "${PROJECT_SOURCE_DIR}/../../../../3rdparty/${PROJECT_KEY}")
   set(PROJECT_REAL_PATH "${PROJECT_BINARY_DIR}/${PROJECT_KEY}")
-  file(COPY ${PROJECT_SRC_PATH} DESTINATION ${PROJECT_BINARY_DIR})
 
   # Source and includes
   get_filename_component(PROJECT_REAL_PATH ${PROJECT_REAL_PATH} ABSOLUTE)
@@ -57,19 +56,26 @@ else()
   set(PROJECT_LIB_TARGET "${PROJECT_REAL_PATH}/src/.libs/libglut.a;")
   if (NOT EXISTS ${PROJECT_LIB_TARGET})
 
+    # Take a copy to build with
+    file(COPY ${PROJECT_SRC_PATH} DESTINATION ${PROJECT_BINARY_DIR})
+
     # Platform config
     if(APPLE)
       import_common_build_flags(BUILD_EXTRA_FLAGS EXTRA_C_FLAGS "-I/usr/X11R6/include")
     else()
       import_common_build_flags(BUILD_EXTRA_FLAGS)
     endif()
-    set(BUILD_EXTRA_FLAGS "${BUILD_EXTRA_FLAGS} --enable-shared=no")
+    set(BUILD_EXTRA_FLAGS "${BUILD_EXTRA_FLAGS} --enable-shared=no CFLAGS=-DFREEGLUT_STATIC")
 
     # <CR> breaks configure
     apply_cr_fix("${PROJECT_REAL_PATH}")
 
-    # Reconf? For mingw
-    # autoreconf --force --install
+    # Reconf for mingw
+    if(WIN32)
+      set(RECONF_CMD "autoreconf --force --install -i")
+      file(WRITE ${PROJECT_REAL_PATH}/cmake.reconf ${RECONF_CMD})
+      execute_process(COMMAND sh cmake.reconf WORKING_DIRECTORY ${PROJECT_REAL_PATH})
+    endif()
 
     # Build
     invoke_autotools("${PROJECT_REAL_PATH}" "${BUILD_EXTRA_FLAGS}")
@@ -84,7 +90,7 @@ else()
   # Opengl
   if(WIN32)
     find_package(OpenGL)
-    set(EXTRA_LIBS "${EXTRA_LIBS};gdi32;opengl32;glu32")
+    set(EXTRA_LIBS "${EXTRA_LIBS};gdi32;opengl32;glu32;winmm")
   elseif(APPLE)
     find_package(OpenGL)
     set(EXTRA_LIBS "${EXTRA_LIBS};${OPENGL_LIBRARIES}")
