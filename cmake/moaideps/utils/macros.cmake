@@ -151,6 +151,34 @@ function(invoke_autotools REAL_PATH EXTRA_FLAGS)
   execute_process(COMMAND make WORKING_DIRECTORY ${REAL_PATH})
 endfunction()
 
+## Manually create a lib archive 
+# @param OUTPUT The output target
+# @param FILES The list of files to add
+function(create_lib_archive OUTPUT FILES)
+
+  find_program(AR ar)
+  if(NOT AR) 
+    message(FATAL_ERROR "Missing ar! Unable to manually bind library archive.")
+  endif()
+
+  message("Manually creating library: ${OUTPUT}")
+  set(AR_CMD_FILE ${PROJECT_BINARY_DIR}/cmake.createlib)
+  file(WRITE ${AR_CMD_FILE} "")
+  
+  set(AR_CMD "ar rvs ${OUTPUT}")
+  set(AR_ALL "${FILES}")
+  foreach(ITEM ${AR_ALL})
+    set(AR_ITEM_CMD "${AR_CMD} ${ITEM}\n")
+    file(APPEND ${AR_CMD_FILE} ${AR_ITEM_CMD})
+  endforeach()
+
+  execute_process(COMMAND sh ${AR_CMD_FILE})
+  if(NOT EXISTS ${OUTPUT})
+    message(FATAL_ERROR "Failed to create library: ${OUTPUT}")
+  endif()
+
+endfunction()
+
 ## Replace any file that contains '\r' with a unix file version.
 # This is specifically because autoconfig doesn't work with CR's
 # @param REAL_PATH The path to the folder with the files in it
