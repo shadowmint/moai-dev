@@ -1,4 +1,10 @@
+cmake fork
+==
+
+Latest cmake branch is: Version-1.3-Build-98-cmake
+
 Welcome to Moai!
+--
 
 Thanks for checking out the Moai source code. Here's the scoop.
 
